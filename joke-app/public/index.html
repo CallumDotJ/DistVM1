@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joke Page</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+
+<body style="background-color: black; color: white; text-align: center; font-family: Arial, sans-serif;">
+    <div class="divClass">
+        <h1>Here's a Joke for You!</h1>
+        <div style="display:flex; flex-direction:row; justify-content: center; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <p>Number of jokes</p>
+            <input type="number" id="jokeCount" value="1" min="1" max="10">
+        </div>
+
+        <div>
+            <p>Select Joke Type:</p>
+            <select id="jokeTypeSelect" >
+                <option value="">Select a type</option>
+            </select>
+        </div>
+
+        <button id="newJokeBtn" style="background: blue; color: white;">Get Joke</button>
+        <p id="jokeSetup" style="margin-top: 20px; color: white;"></p>
+        <p id="jokePunchline" style="margin-top: 20px; color: white;"></p>
+    </div>
+</body>
+
+</html>

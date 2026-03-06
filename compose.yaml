@@ -1,0 +1,56 @@
+services:
+
+  etl:
+    build:
+      context: ./etl
+    container_name: etl
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: ${ETL_CONTAINER_PORT}
+      AMQP_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${VM2_PRIVATE_IP}:${RABBITMQ_PORT}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "${ETL_PORT_INTERNAL}:${ETL_CONTAINER_PORT}"
+  
+  mysql:
+    image: mysql
+    container_name: mysql
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - mysql:/var/lib/mysql # persist data outside container
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 10s # Try the healthcheck this often. Wait, check, wait, check etc
+      timeout: 5s # Response to the healthcheck should complete in this time or fail
+      retries: 20 # Try this many times after failure before giving up completely
+      start_period: 30s
+
+    ports:
+      - ${MYSQL_CONTAINER_PORT}:${MYSQL_PORT_INTERNAL}
+
+
+  joke:
+    build:
+      context: ./joke-app
+    container_name: joke
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: ${JOKES_CONTAINER_PORT}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # Host port -> container port
+    ports:
+      - "${JOKES_PORT_INTERNAL}:${JOKES_CONTAINER_PORT}"
+
+
+
+
+volumes:
+  mysql:
