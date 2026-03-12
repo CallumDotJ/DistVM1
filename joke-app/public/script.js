@@ -7,7 +7,7 @@ async function loadTypes()
     const select = document.getElementById("jokeTypeSelect");
 
     try{
-        const response = await fetch("/types") //fetch
+        const response = await fetch("/joke-api/types") //fetch
         const types = await response.json();
 
         select.innerHTML = '<option value="">Select a type</option>'; //clear all besides placeholder
