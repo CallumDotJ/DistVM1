@@ -90,10 +90,19 @@ async function startConsumer() { // connect to RabbitMQ and start consuming mess
   });
 }
 
-startConsumer().catch((e) => {
-  console.error("Fatal ETL startup error:", e);
-  process.exit(1);
-});
+async function startConsumerWithRetry() {
+  while (true) {
+    try {
+      await startConsumer();
+      break;
+    } catch (e) {
+      console.error("Rabbut not ready, retrying in 5s:", e.message);
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+  }
+}
+
+startConsumerWithRetry();
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`ETL alive on port ${PORT}`);
