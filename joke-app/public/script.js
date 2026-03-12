@@ -47,7 +47,7 @@ async function fetchJoke()
 
     try
     {
-        const response = await fetch(`/joke/${type}?count=${count}`);
+        const response = await fetch(`/joke-api/joke/${type}?count=${count}`);
 
         if(!response.ok) // catch api level errors
         {
