@@ -68,9 +68,18 @@ async function processMessage(msgObj) {
       [setup, punchline, typeId],
     );
 
+    // get all types if needed
+
+    let allTypes = null;
+
+    if(isNewType)
+    {
+      allTypes = await getAllTypes(conn);
+    }
+
     await conn.commit(); // commit transaction
 
-    return { isNewType, type };
+    return { isNewType, type, allTypes };
   } catch (e) {
     await conn.rollback(); // rollback on error
     throw e;
@@ -125,7 +134,7 @@ async function startConsumer() {
 
       if (result.isNewType === true) {
         // publish logic
-        await publishNewType(channel, result.type);
+        await publishNewType(channel, result.allTypes);
       }
 
       // acknowledge message only after successful processing to avoid data loss
@@ -139,10 +148,10 @@ async function startConsumer() {
   });
 }
 
-async function publishNewType(channel, type) {
+async function publishNewType(channel, types) {
   const eventObj = {
     event: "type_update",
-    type,
+    types,
   };
 
   const msg = Buffer.from(JSON.stringify(eventObj));
@@ -152,7 +161,7 @@ async function publishNewType(channel, type) {
     "",
     msg
   );
-  console.log(`ETL published type_update for "${type}"`);
+  console.log(`ETL published type_update for "${types.length}"`);
 }
 
 async function startConsumerWithRetry() {
@@ -165,6 +174,15 @@ async function startConsumerWithRetry() {
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
+}
+
+async function getAllTypes(conn)
+{
+  const [rows] = await conn.execute(
+    "SELECT type FROM tbl_type ORDER BY type ASC"
+  );
+
+  return rows.map(r => r.type);
 }
 
 startConsumerWithRetry();

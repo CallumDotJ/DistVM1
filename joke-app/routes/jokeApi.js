@@ -4,6 +4,7 @@ const router = express.Router();
 const mysql = require('mysql2');
 const path = require('path')
 
+
 // DB connection setup - using env vars
 let conStr = {}
 conStr.host = process.env.MYSQL_SERVICE || 'localhost'
@@ -12,6 +13,9 @@ conStr.password = process.env.MYSQL_PASSWORD || 'admin'
 conStr.database = process.env.MYSQL_DATABASE || 'jokes_db'
 conStr.port = process.env.MYSQL_PORT_INTERNAL || 3306
 const db = mysql.createConnection(conStr)
+
+
+
 
 // Old joke route - now replaced by DB version
 
