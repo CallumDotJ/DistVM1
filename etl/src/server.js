@@ -18,8 +18,7 @@ const AMQP_URL =
 
 const MODERATED_QUEUE_NAME =
   process.env.MODERATED_QUEUE_NAME || "moderated_queue";
-const TYPE_UPDATE_QUEUE_NAME =
-  process.env.TYPE_UPDATE_QUEUE_NAME || "type_update_queue";
+const EXCHANGE = "type_update_exchange";
 
 const pool = makePool();
 
@@ -87,12 +86,14 @@ async function startConsumer() {
 
   await channel.assertQueue(QUEUE_NAME, { durable: true });
 
-  await channel.assertQueue(MODERATED_QUEUE_NAME, {durable: true });
+  await channel.assertQueue(MODERATED_QUEUE_NAME, { durable: true });
+
+  await channel.assertExchange(EXCHANGE, "fanout", { durable: true });
 
   channel.prefetch(1); // process one message at a time for better reliability
 
   console.log(`ETL consuming queue: ${QUEUE_NAME}`);
-/* 
+  /* 
   channel.consume(QUEUE_NAME, async (msg) => {
     // callback for each message
 
@@ -145,7 +146,11 @@ async function publishNewType(channel, type) {
 
   const msg = Buffer.from(JSON.stringify(eventObj));
 
-  channel.sendToQueue(TYPE_UPDATE_QUEUE_NAME, msg, { persistent: true });
+  channel.publish(
+    EXCHANGE,
+    "",
+    msg
+  );
   console.log(`ETL published type_update for "${type}"`);
 }
 
