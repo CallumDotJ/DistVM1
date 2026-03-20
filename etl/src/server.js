@@ -86,10 +86,13 @@ async function startConsumer() {
   const channel = await conn.createChannel();
 
   await channel.assertQueue(QUEUE_NAME, { durable: true });
+
+  await channel.assertQueue(MODERATED_QUEUE_NAME, {durable: true });
+
   channel.prefetch(1); // process one message at a time for better reliability
 
   console.log(`ETL consuming queue: ${QUEUE_NAME}`);
-
+/* 
   channel.consume(QUEUE_NAME, async (msg) => {
     // callback for each message
 
@@ -107,10 +110,11 @@ async function startConsumer() {
       // If DB down temporarily, requeue so it can be retried
       channel.nack(msg, false, true);
     }
-  });
+  }); */
 
   // NEW MODERATOR QUEUE CONSUMPTION
-  channel.consume(MODERATED_QUEUE_NAME, async (msg) => {
+  //channel.consume(MODERATED_QUEUE_NAME, async (msg) => {
+  channel.consume(QUEUE_NAME, async (msg) => {
     if (!msg) return;
 
     try {
