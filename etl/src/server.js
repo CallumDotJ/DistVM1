@@ -89,6 +89,7 @@ async function startConsumer() {
   await channel.assertQueue(MODERATED_QUEUE_NAME, { durable: true });
 
   await channel.assertExchange(EXCHANGE, "fanout", { durable: true });
+  console.log("ETL asserted exchange CRAETED WOOOOO")
 
   channel.prefetch(1); // process one message at a time for better reliability
 
