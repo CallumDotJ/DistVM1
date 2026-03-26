@@ -5,30 +5,33 @@ const { makePool } = require("./db");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// RABBITMQ Confiq
 const RMQ_HOST = process.env.RABBITMQ_HOST || "rabbitmq";
 const RMQ_PORT = process.env.RABBITMQ_PORT || 5672;
 const RMQ_USER = process.env.RABBITMQ_DEFAULT_USER || "admin";
 const RMQ_PASS = process.env.RABBITMQ_DEFAULT_PASS || "admin";
 const QUEUE_NAME = process.env.QUEUE_NAME || "submit_queue";
 
+// RabbitMQ constr
 const AMQP_URL =
   process.env.AMQP_URL ||
   `amqp://${RMQ_USER}:${RMQ_PASS}@${RMQ_HOST}:${RMQ_PORT}`;
 
+// RabbitMQ queues and exchange
 const MODERATED_QUEUE_NAME =
   process.env.MODERATED_QUEUE_NAME || "moderated_queue";
 const EXCHANGE = "type_update_exchange";
 
+//db
 const pool = makePool();
 
 app.get("/alive", (req, res) => {
   res.send({ ok: "Alive", service: "ETL" });
 });
 
-/*Function to process the message and send to the DB.*/
+//Function to process the message and send to the DB.
 async function processMessage(msgObj) {
-  // etl function to process each message
-
+  
   // transform step - normalise type and trim strings
   const setup = String(msgObj.setup || "").trim();
   const punchline = String(msgObj.punchline || "").trim();
@@ -42,9 +45,10 @@ async function processMessage(msgObj) {
 
   const conn = await pool.getConnection();
   try {
+
     await conn.beginTransaction();
 
-    // load step 1 - insert type if new (no duplicates thanks to UNIQUE + IGNORE)
+    // load 1 - insert type if new - sql stop duplicate
     const [newTypeResult] = await conn.execute(
       "INSERT IGNORE INTO tbl_type (type) VALUES (?)",
       [type],
@@ -58,8 +62,9 @@ async function processMessage(msgObj) {
       [type],
     );
 
+    // for whatever reason its not in the db = error
     const typeId = rows?.[0]?.id;
-    if (!typeId) throw new Error("Failed to resolve type id");
+    if (!typeId) {console.log("no match for typeID")};
 
     // load step 3 - insert joke
     await conn.execute(
@@ -67,7 +72,7 @@ async function processMessage(msgObj) {
       [setup, punchline, typeId],
     );
 
-    // get all types if needed
+    // get all types to send to exchange
 
     let allTypes = null;
 
@@ -92,38 +97,21 @@ async function startConsumer() {
   const conn = await amqp.connect(AMQP_URL);
   const channel = await conn.createChannel();
 
+  // submit queue assert = cons
   await channel.assertQueue(QUEUE_NAME, { durable: true });
 
+  // moderated queue assert = prod
   await channel.assertQueue(MODERATED_QUEUE_NAME, { durable: true });
 
+  // type_update event subs
   await channel.assertExchange(EXCHANGE, "fanout", { durable: true });
-  console.log("ETL asserted exchange CRAETED WOOOOO")
+  console.log("ETL asserted exchange  CRAETED WOOOOO")
 
-  channel.prefetch(1); // process one message at a time for better reliability
+  channel.prefetch(1); // process one message at a time
 
   console.log(`ETL consuming queue: ${QUEUE_NAME}`);
-  /* 
-  channel.consume(QUEUE_NAME, async (msg) => {
-    // callback for each message
-
-    if (!msg) return;
-
-    try {
-      const msgObj = JSON.parse(msg.content.toString());
-      await processMessage(msgObj); //
-
-      // acknowledge message only after successful processing to avoid data loss
-      channel.ack(msg);
-      console.log(" ETL wrote message to DB:", msgObj.type);
-    } catch (err) {
-      console.error(" ETL failed:", err.message);
-      // If DB down temporarily, requeue so it can be retried
-      channel.nack(msg, false, true);
-    }
-  }); */
-
+  
   // NEW MODERATOR QUEUE CONSUMPTION
-  //channel.consume(MODERATED_QUEUE_NAME, async (msg) => {
   channel.consume(QUEUE_NAME, async (msg) => {
     if (!msg) return;
 
@@ -136,7 +124,7 @@ async function startConsumer() {
         await publishNewType(channel, result.allTypes);
       }
 
-      // acknowledge message only after successful processing to avoid data loss
+      // acknowledge message only after successful processing
       channel.ack(msg);
       console.log(" ETL wrote message to DB:", msgObj.type);
     } catch (err) {
@@ -147,12 +135,15 @@ async function startConsumer() {
   });
 }
 
+// function to send new type update to the exchange
 async function publishNewType(channel, types) {
+  // tmp obj
   const eventObj = {
     event: "type_update",
     types,
   };
 
+  // load into msg
   const msg = Buffer.from(JSON.stringify(eventObj));
 
   channel.publish(
@@ -163,6 +154,7 @@ async function publishNewType(channel, types) {
   console.log(`ETL published type_update for "${types.length}"`);
 }
 
+// continously tries to start consumer 
 async function startConsumerWithRetry() {
   while (true) {
     try {
@@ -170,11 +162,12 @@ async function startConsumerWithRetry() {
       break;
     } catch (e) {
       console.error("Rabbut not ready, retrying in 5s:", e.message);
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // use promise as wait
     }
   }
 }
 
+// returns all types from db 
 async function getAllTypes(conn)
 {
   const [rows] = await conn.execute(

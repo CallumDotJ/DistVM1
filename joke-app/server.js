@@ -1,5 +1,4 @@
 const express = require('express');
-//const jokes = require('data/jokes');
 const path = require('path');
 
 const jokeApiRouter = require('./routes/jokeApi');

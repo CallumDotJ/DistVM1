@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-//const jokes = require('../tempData/jokes.json');
 const mysql = require('mysql2');
 const path = require('path')
 
@@ -15,46 +14,8 @@ conStr.port = process.env.MYSQL_PORT_INTERNAL || 3306
 const db = mysql.createConnection(conStr)
 
 
-
-
-// Old joke route - now replaced by DB version
-
-// router.get('/joke/:type', (req, res) => {
-
-//     const type = req.params.type.toLowerCase(); // lower case for consistency
-//     const count = parseInt(req.query.count) || 1;  // if no query param, default to 1
-
-//     let pool = []; // set up temp pool of jokes of type
-
-//     if (type === 'any') {
-//         pool = jokes // can be any joke
-//         const selectedJokes = [];
-//     }
-//     else {
-//         pool = jokes.filter(joke => joke.type.toLowerCase() === type); // lower case for consistency
-//     }
-
-//     // case no jokes found
-//     if (pool.length === 0) {
-//         return  res.status(404).json({ error: 'No jokes found for the specified type.' });
-//     }
-
-//     const selectedJokes = [];
-
-//     if(count === 1) // 1 requested
-//     {
-//         selectedJokes.push(pool[Math.floor(Math.random() * pool.length)]); // random joke
-//     }
-//     else { // multiple requested
-//         selectedJokes = pool.slice(0, count); // get the requested number of jokes
-//     }
-
-//     res.json({ jokes: selectedJokes }); // set res to jokes
-
-// } )
-
 // New joke route - fetches from DB
-
+// takes ?count
 router.get('/joke/:type', async (req, res) => {
 
     if(!req.params.type) {
@@ -65,10 +26,11 @@ router.get('/joke/:type', async (req, res) => {
     let count = parseInt(req.query.count) || 1;  // if no query param, default to 1
 
     if (req.query.count) {
-        count = Number(req.query.count);
+        count = Number(req.query.count); // ensure
     }
 
-    let jokes = await getJokes(count, type);
+    let jokes = await getJokes(count, type); // db query 
+
     if (jokes.length > 0) {
         res.setHeader('Content-Type', 'application/JSON');
         res.json({ jokes: jokes });
@@ -78,17 +40,12 @@ router.get('/joke/:type', async (req, res) => {
     }
 })
 
-// Old Types
 
-// router.get('/types', (req, res) => {
-//     const types = [...new Set(jokes.map(joke => joke.type))]; // extract unique types using Set
-//     res.json({ types });
-// });
 
 // New Type
 router.get('/types', (req, res) => {
     let sql = `SELECT * FROM tbl_type`
-    db.query(sql, (err, results) => {
+    db.query(sql, (err, results) => { // db request
         if (err) {
             return res.sendStatus(500) // 500 error
         }
@@ -103,7 +60,7 @@ let getJokes = async function (numJokes, type) {
     let selectedJokes = []
     let sql = ''
 
-    if (!numJokes || numJokes < 1) numJokes = 1
+    if (!numJokes || numJokes < 1) numJokes = 1 
 
     sql = `
      SELECT tbl_jokes.id, tbl_jokes.setup, tbl_jokes.punchline, tbl_type.type 
@@ -117,7 +74,7 @@ let getJokes = async function (numJokes, type) {
         sql += ` where tbl_type.type = "${type}"`
         sql += ` ORDER BY RAND() LIMIT ${numJokes}` // random order
 
-        jokes = await new Promise((resolve, reject) => {
+        jokes = await new Promise((resolve, reject) => { // promise based rather than mysql promise - should really change
             db.query(sql, (err, results) => {
                 if (err) {
                     reject(err)
@@ -130,7 +87,7 @@ let getJokes = async function (numJokes, type) {
      }
      else { // if any, just get random jokes without filter
         sql += ` ORDER BY RAND() LIMIT ${numJokes}`
-        jokes = await new Promise((resolve, reject) => {
+        jokes = await new Promise((resolve, reject) => { 
             db.query(sql, (err, results) => {
                 if (err) {
                     reject(err)

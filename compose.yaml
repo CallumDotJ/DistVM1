@@ -1,5 +1,6 @@
 services:
 
+  # ETL Container 
   etl:
     build:
       context: ./etl
@@ -15,6 +16,7 @@ services:
     ports:
       - "${ETL_PORT_INTERNAL}:${ETL_CONTAINER_PORT}"
   
+  # MYSQL CONTAINER
   mysql:
     image: mysql
     container_name: mysql
@@ -25,15 +27,16 @@ services:
       - mysql:/var/lib/mysql # persist data outside container
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
-      interval: 10s # Try the healthcheck this often. Wait, check, wait, check etc
-      timeout: 5s # Response to the healthcheck should complete in this time or fail
-      retries: 20 # Try this many times after failure before giving up completely
+      interval: 10s # 
+      timeout: 5s # 
+      retries: 20 # T
       start_period: 30s
 
     ports:
       - ${MYSQL_CONTAINER_PORT}:${MYSQL_PORT_INTERNAL}
 
 
+ # JOKE SERVICE 
   joke:
     build:
       context: ./joke-app
