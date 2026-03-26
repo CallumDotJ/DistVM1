@@ -10,11 +10,10 @@ const RMQ_PORT = process.env.RABBITMQ_PORT || 5672;
 const RMQ_USER = process.env.RABBITMQ_DEFAULT_USER || "admin";
 const RMQ_PASS = process.env.RABBITMQ_DEFAULT_PASS || "admin";
 const QUEUE_NAME = process.env.QUEUE_NAME || "submit_queue";
-const RMQ_VM2_PRIVATEIP = process.env.RABBITMQ_VM2_PRIVATEIP || "172.17.0.2"; // for testing with VM2
 
 const AMQP_URL =
   process.env.AMQP_URL ||
-  `amqp://${RMQ_USER}:${RMQ_PASS}@${RMQ_VM2_PRIVATEIP}:${RMQ_PORT}`;
+  `amqp://${RMQ_USER}:${RMQ_PASS}@${RMQ_HOST}:${RMQ_PORT}`;
 
 const MODERATED_QUEUE_NAME =
   process.env.MODERATED_QUEUE_NAME || "moderated_queue";

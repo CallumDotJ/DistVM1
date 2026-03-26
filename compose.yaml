@@ -8,7 +8,7 @@ services:
     env_file: .env
     environment:
       PORT: ${ETL_CONTAINER_PORT}
-      AMQP_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${VM2_PRIVATE_IP}:${RABBITMQ_PORT}
+      AMQP_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@${RABBITMQ_HOST}:${RABBITMQ_PORT}
     depends_on:
       mysql:
         condition: service_healthy
